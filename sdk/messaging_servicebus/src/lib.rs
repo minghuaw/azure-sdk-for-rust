@@ -127,7 +127,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 */
 
 #![recursion_limit = "128"]
-#![deny(missing_docs, missing_debug_implementations)]
+#![deny(
+    // missing_docs,
+    missing_debug_implementations
+)]
 
 pub(crate) mod constants;
 pub(crate) mod diagnostics;
@@ -150,7 +153,7 @@ pub mod rule_manager;
 pub mod sender;
 
 // TODO: reserved for future use
-// pub mod processor;
+pub mod processor;
 
 pub mod prelude {
     //! Re-exports
