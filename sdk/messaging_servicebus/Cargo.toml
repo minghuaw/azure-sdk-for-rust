@@ -24,24 +24,27 @@ edition = "2021"
 rustdoc-args = ["--cfg", "docsrs"] # for conditional intra-doc links
 
 [dependencies]
-async-trait = "0.1"
 azure_core = { path = "../core", version = "0.8" }
 base64 = "0.20.0"
-const_format = "0.2"
+time = "0.3.10"
+log = "0.4"
+url = "2.2"
+hmac = "0.12"
+sha2 = "0.10"
+bytes = "1.0"
+
+[target.'cfg(not(target_arch = "wasm32"))'.dependencies]
 digest = "0.10"
 futures-util = "0.3"
-hmac = "0.12"
-log = "0.4"
 rand = "0.8.5"
 serde = "1"
-sha2 = "0.10"
 thiserror = "1.0"
-time = "0.3.10"
-tokio = {version = "1", features = ["time"]}
-tokio-util = {version = "0.7.3", features = ["time"]}
-url = "2.2"
 urlencoding = "2"
 uuid = { version = "1", features=["v4"] }
+const_format = "0.2"
+async-trait = "0.1"
+tokio = {version = "1", features = ["time"]}
+tokio-util = {version = "0.7", features = ["time"]}
 
 # AMQP dependencies
 fe2o3-amqp = {version = "0.8.6", features = ["rustls"]} # TODO: let user choose rustls or native-tls?
@@ -50,6 +53,9 @@ fe2o3-amqp-management = "0.2.1"
 fe2o3-amqp-types = "0.7"
 fe2o3-amqp-ws = { version = "0.2", features = ["rustls-tls-webpki-roots"] }
 serde_amqp = {version = "0.5.6", features = ["time"]}
+
+[target.'cfg(target_arch = "wasm32")'.dependencies]
+ring = { version = "0.16" }
 
 [dev-dependencies]
 anyhow = "1.0"
