@@ -9,27 +9,70 @@ repository = "https://github.com/azure/azure-sdk-for-rust"
 homepage = "https://github.com/azure/azure-sdk-for-rust"
 documentation = "https://docs.rs/azure_messaging_servicebus"
 
-keywords = ["sdk", "azure", "rest", "iot", "cloud"]
 categories = ["api-bindings"]
+keywords = ["sdk", "azure", "rest", "iot", "cloud"]
 
 edition = "2021"
 
-[dependencies]
-azure_core = { path = "../core", version = "0.8" }
-base64 = "0.13"
-time = "0.3.10"
-log = "0.4"
-url = "2.2"
-hmac = "0.12"
-sha2 = "0.10"
-ring = "0.16"
-bytes = "1.0"
+# docs.rs configurations
+# To test the docs locally, run
+# cargo +nightly doc --no-deps --open -Z unstable-options --config "build.rustdocflags=[\"--cfg\", \"docsrs\"]"
+# The nightly toolchain is only used to build the docs, the crate itself doesn't neet nightly.
+# TODO: enable all features when building docs
+[package.metadata.docs.rs]
+# all-features = true
+rustdoc-args = ["--cfg", "docsrs"] # for conditional intra-doc links
 
-[dev-dependencies]
+[dependencies]
+async-trait = "0.1"
+base64 = "0.20.0"
+const_format = "0.2"
+digest = "0.10"
+futures-util = "0.3"
+hmac = "0.12"
+log = "0.4"
+rand = "0.8.5"
+serde = "1"
+sha2 = "0.10"
+thiserror = "1.0"
+time = "0.3.10"
+url = "2.2"
+urlencoding = "2"
+uuid = { version = "1", features=["v4"] }
+
+[target.'cfg(not(target_arch = "wasm32"))'.dependencies]
+azure_core = { path = "../core", version = "0.8" }
+tokio-util = {version = "0.7.3", features = ["time"]}
+tokio = {version = "1", features = ["rt", "macros", "sync", "time", "net"]} # "net" and "time" are not supported on wasm32-unknown-unknown
+
+# AMQP dependencies
+fe2o3-amqp = {version = "0.8.6"} # TODO: let user choose rustls or native-tls?
+fe2o3-amqp-cbs = "0.2"
+fe2o3-amqp-management = "0.2.1"
+fe2o3-amqp-types = "0.7"
+fe2o3-amqp-ws = { version = "0.2" }
+serde_amqp = {version = "0.5.6", features = ["time"]}
+
+[target.'cfg(target_arch = "wasm32")'.dependencies]
+# Add dependency to getrandom to enable WASM support
+getrandom = { version = "0.2", features = ["js"] }
+
+# wasm32 target is not supported yet
+[target.'cfg(not(target_arch = "wasm32"))'.dev-dependencies]
+anyhow = "1.0"
+dotenv = "0.15"
 futures = "0.3"
-tokio = { version = "1.0", features = ["macros", "rt-multi-thread"] }
+tokio = {version = "1.0", features = ["macros", "rt-multi-thread"]}
+mockall = "0.11"
 env_logger = "0.10"
 
 [features]
-default = ["azure_core/enable_reqwest"]
+default = ["rustls"]
 test_e2e = []
+
+# TODO: transaction is not implemented yet.
+# Transaction requires standard tier or above
+transaction = ["fe2o3-amqp/transaction"]
+
+rustls = ["fe2o3-amqp/rustls", "fe2o3-amqp-ws/rustls-tls-webpki-roots"]
+native-tls = ["fe2o3-amqp/native-tls", "fe2o3-amqp-ws/native-tls"]
