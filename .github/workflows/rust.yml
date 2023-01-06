@@ -1,0 +1,36 @@
+name: Live test
+
+on:
+  push:
+    branches: [ "service_bus_over_amqp" ]
+  pull_request:
+    branches: [ "main" ]
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  build:
+    environment: service_bus_live_test
+    env:
+      SERVICE_BUS_CONNECTION_STRING: ${{ secrets.SERVICE_BUS_CONNECTION_STRING }}
+      SERVICE_BUS_NAMESPACE: ${{ secrets.SERVICE_BUS_NAMESPACE }}
+      SERVICE_BUS_SAS_KEY_NAME: ${{ secrets.SERVICE_BUS_SAS_KEY_NAME }}
+      SERVICE_BUS_SAS_KEY: ${{ secrets.SERVICE_BUS_SAS_KEY }}
+      SERVICE_BUS_QUEUE: ${{ secrets.SERVICE_BUS_QUEUE }}
+      SERVICE_BUS_SESSION_QUEUE: ${{ secrets.SERVICE_BUS_SESSION_QUEUE }}
+      SERVICE_BUS_TOPIC: ${{ secrets.SERVICE_BUS_TOPIC }}
+      SERVICE_BUS_SUBSCRIPTION: ${{ secrets.SERVICE_BUS_SUBSCRIPTION }}
+      SERVICE_BUS_SESSION_TOPIC: ${{ secrets.SERVICE_BUS_SESSION_TOPIC }}
+      SERVICE_BUS_SESSION_SUBSCRIPTION: ${{ secrets.SERVICE_BUS_SESSION_SUBSCRIPTION }}
+      SERVICE_BUS_RULE_FILTER_TEST_TOPIC: ${{ secrets.SERVICE_BUS_SESSION_TOPIC }}
+      SERVICE_BUS_RULE_FILTER_TEST_SUBSCRIPTION: ${{ secrets.SERVICE_BUS_SESSION_SUBSCRIPTION }}
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v3
+    - name: Build
+      run: cargo build --verbose
+    - name: Run tests
+      run: cargo test --verbose
