@@ -31,6 +31,7 @@ jobs:
 
   test-sdk:
     name: SDK Tests
+    environment: service_bus_live_test
     runs-on: ubuntu-20.04
     strategy:
       matrix:
@@ -53,7 +54,33 @@ jobs:
         run: cargo +${{ matrix.build }} check --all --features azurite_workaround
 
       - name: sdk tests
-        run: cargo +${{ matrix.build }} test --all
+        env:
+          SERVICE_BUS_CONNECTION_STRING: '${{ secrets.SERVICE_BUS_CONNECTION_STRING }}'
+          SERVICE_BUS_NAMESPACE: '${{ secrets.SERVICE_BUS_NAMESPACE }}'
+          SERVICE_BUS_SAS_KEY_NAME: '${{ secrets.SERVICE_BUS_SAS_KEY_NAME }}'
+          SERVICE_BUS_SAS_KEY: '${{ secrets.SERVICE_BUS_SAS_KEY }}'
+          SERVICE_BUS_QUEUE: '${{ secrets.SERVICE_BUS_QUEUE }}'
+          SERVICE_BUS_SESSION_QUEUE: '${{ secrets.SERVICE_BUS_SESSION_QUEUE }}'
+          SERVICE_BUS_TOPIC: '${{ secrets.SERVICE_BUS_TOPIC }}'
+          SERVICE_BUS_SUBSCRIPTION: '${{ secrets.SERVICE_BUS_SUBSCRIPTION }}'
+          SERVICE_BUS_SESSION_TOPIC: '${{ secrets.SERVICE_BUS_SESSION_TOPIC }}'
+          SERVICE_BUS_SESSION_SUBSCRIPTION: '${{ secrets.SERVICE_BUS_SESSION_SUBSCRIPTION }}'
+          SERVICE_BUS_RULE_FILTER_TEST_TOPIC: '${{ secrets.SERVICE_BUS_SESSION_TOPIC }}'
+          SERVICE_BUS_RULE_FILTER_TEST_SUBSCRIPTION: '${{ secrets.SERVICE_BUS_SESSION_SUBSCRIPTION }}'
+        run: |
+          echo $SERVICE_BUS_CONNECTION_STRING
+          echo $SERVICE_BUS_NAMESPACE
+          echo $SERVICE_BUS_SAS_KEY_NAME
+          echo $SERVICE_BUS_SAS_KEY
+          echo $SERVICE_BUS_QUEUE
+          echo $SERVICE_BUS_SESSION_QUEUE
+          echo $SERVICE_BUS_TOPIC
+          echo $SERVICE_BUS_SUBSCRIPTION
+          echo $SERVICE_BUS_SESSION_TOPIC
+          echo $SERVICE_BUS_SESSION_SUBSCRIPTION
+          echo $SERVICE_BUS_RULE_FILTER_TEST_TOPIC
+          echo $SERVICE_BUS_RULE_FILTER_TEST_SUBSCRIPTION
+          cargo +${{ matrix.build }} test --all
 
   test-services:
     name: Services Tests
@@ -83,28 +110,40 @@ jobs:
 
   test-integration:
     name: Integration Tests
-    environment: service_bus_live_test
-    env:
-      SERVICE_BUS_CONNECTION_STRING: ${{ secrets.SERVICE_BUS_CONNECTION_STRING }}
-      SERVICE_BUS_NAMESPACE: ${{ secrets.SERVICE_BUS_NAMESPACE }}
-      SERVICE_BUS_SAS_KEY_NAME: ${{ secrets.SERVICE_BUS_SAS_KEY_NAME }}
-      SERVICE_BUS_SAS_KEY: ${{ secrets.SERVICE_BUS_SAS_KEY }}
-      SERVICE_BUS_QUEUE: ${{ secrets.SERVICE_BUS_QUEUE }}
-      SERVICE_BUS_SESSION_QUEUE: ${{ secrets.SERVICE_BUS_SESSION_QUEUE }}
-      SERVICE_BUS_TOPIC: ${{ secrets.SERVICE_BUS_TOPIC }}
-      SERVICE_BUS_SUBSCRIPTION: ${{ secrets.SERVICE_BUS_SUBSCRIPTION }}
-      SERVICE_BUS_SESSION_TOPIC: ${{ secrets.SERVICE_BUS_SESSION_TOPIC }}
-      SERVICE_BUS_SESSION_SUBSCRIPTION: ${{ secrets.SERVICE_BUS_SESSION_SUBSCRIPTION }}
-      SERVICE_BUS_RULE_FILTER_TEST_TOPIC: ${{ secrets.SERVICE_BUS_SESSION_TOPIC }}
-      SERVICE_BUS_RULE_FILTER_TEST_SUBSCRIPTION: ${{ secrets.SERVICE_BUS_SESSION_SUBSCRIPTION }}
     runs-on: ubuntu-20.04
+    environment: service_bus_live_test
     steps:
       - uses: actions/checkout@v3
       - run: rustup update --no-self-update stable
       - uses: Swatinem/rust-cache@v2
 
       - name: emulator integration tests
+        env:
+          SERVICE_BUS_CONNECTION_STRING: '${{ secrets.SERVICE_BUS_CONNECTION_STRING }}'
+          SERVICE_BUS_NAMESPACE: '${{ secrets.SERVICE_BUS_NAMESPACE }}'
+          SERVICE_BUS_SAS_KEY_NAME: '${{ secrets.SERVICE_BUS_SAS_KEY_NAME }}'
+          SERVICE_BUS_SAS_KEY: '${{ secrets.SERVICE_BUS_SAS_KEY }}'
+          SERVICE_BUS_QUEUE: '${{ secrets.SERVICE_BUS_QUEUE }}'
+          SERVICE_BUS_SESSION_QUEUE: '${{ secrets.SERVICE_BUS_SESSION_QUEUE }}'
+          SERVICE_BUS_TOPIC: '${{ secrets.SERVICE_BUS_TOPIC }}'
+          SERVICE_BUS_SUBSCRIPTION: '${{ secrets.SERVICE_BUS_SUBSCRIPTION }}'
+          SERVICE_BUS_SESSION_TOPIC: '${{ secrets.SERVICE_BUS_SESSION_TOPIC }}'
+          SERVICE_BUS_SESSION_SUBSCRIPTION: '${{ secrets.SERVICE_BUS_SESSION_SUBSCRIPTION }}'
+          SERVICE_BUS_RULE_FILTER_TEST_TOPIC: '${{ secrets.SERVICE_BUS_SESSION_TOPIC }}'
+          SERVICE_BUS_RULE_FILTER_TEST_SUBSCRIPTION: '${{ secrets.SERVICE_BUS_SESSION_SUBSCRIPTION }}'
         run: |
+          echo $SERVICE_BUS_CONNECTION_STRING
+          echo $SERVICE_BUS_NAMESPACE
+          echo $SERVICE_BUS_SAS_KEY_NAME
+          echo $SERVICE_BUS_SAS_KEY
+          echo $SERVICE_BUS_QUEUE
+          echo $SERVICE_BUS_SESSION_QUEUE
+          echo $SERVICE_BUS_TOPIC
+          echo $SERVICE_BUS_SUBSCRIPTION
+          echo $SERVICE_BUS_SESSION_TOPIC
+          echo $SERVICE_BUS_SESSION_SUBSCRIPTION
+          echo $SERVICE_BUS_RULE_FILTER_TEST_TOPIC
+          echo $SERVICE_BUS_RULE_FILTER_TEST_SUBSCRIPTION
           npm install azurite@3.13.1
           npx azurite &
           cargo test --features test_integration
