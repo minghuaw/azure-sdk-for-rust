@@ -2,6 +2,7 @@ use std::{marker::PhantomData, sync::Arc, time::Duration};
 
 use async_trait::async_trait;
 use azure_core::Url;
+use fe2o3_amqp::transaction::TransactionDischarge;
 use tokio::sync::Mutex;
 
 use crate::{
@@ -15,7 +16,7 @@ use crate::{
     },
     receiver::service_bus_receive_mode::ServiceBusReceiveMode,
     sealed::Sealed,
-    ServiceBusRetryPolicy,
+    ServiceBusRetryPolicy, amqp::error::AmqpTransactionDischargeError,
 };
 
 use super::{
@@ -324,22 +325,31 @@ cfg_transaction! {
         type Scope<'t> = TransactionScope<'t>;
         type TransactionError = AmqpTransactionError;
 
-        async fn create_and_run_transaction_scope<F, Fut, O>(
+        async fn create_and_run_transaction_scope<F, Fut>(
             &mut self,
             op: F
-        ) -> Result<O, Self::TransactionError>
+        ) -> Result<(), Self::TransactionError>
         where
-            F: FnOnce(Self::Scope<'_>) -> Fut + Send,
-            Fut: std::future::Future<Output = Result<O, Self::TransactionError>> + Send,
+            F: FnOnce(&'_ Self::Scope<'_>) -> Fut + Send,
+            Fut: std::future::Future<Output = Result<(), Self::TransactionError>> + Send,
         {
             use fe2o3_amqp::transaction::Transaction;
 
             let guard = self.connection_scope.lock().await;
             let txn = Transaction::declare(&guard.transaction_controller, None).await
-                .map_err(|err| AmqpTransactionError::Declare(err))?;
+                .map_err(|err| AmqpTransactionError::Declare(err)).unwrap();
             let scope = TransactionScope::new(AmqpTransaction(txn));
 
-            (op)(scope).await
+            match (op)(&scope).await {
+                Ok(_) => {
+                    scope.commit().await?;
+                    Ok(())
+                },
+                Err(err) => {
+                    scope.rollback().await?;
+                    Err(err)
+                }
+            }
         }
     }
 }

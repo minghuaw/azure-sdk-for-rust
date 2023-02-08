@@ -7,7 +7,7 @@ use azure_core::{auth::TokenCredential, Url};
 use crate::{
     amqp::{
         amqp_client::AmqpClient,
-        error::{AmqpClientError, OpenReceiverError, OpenRuleManagerError, OpenSenderError},
+        error::{AmqpClientError, OpenReceiverError, OpenRuleManagerError, OpenSenderError, AmqpTransactionError},
     },
     authorization::{
         service_bus_token_credential::ServiceBusTokenCredential,
@@ -516,10 +516,10 @@ where
 
     cfg_transaction! {
         /// Declares a transaction and performs the transactional operations within the scope
-        pub async fn transaction<F, Fut, O>(&mut self, op: F) -> Result<O, TransactionError>
+        pub async fn transaction<F, Fut>(&mut self, op: F) -> Result<(), AmqpTransactionError>
         where
-            for<'t> F: FnOnce(TransactionScope<'t>) -> Fut + Send,
-            Fut: std::future::Future<Output = Result<O, TransactionError>> + Send,
+            F: FnOnce(&'_ TransactionScope<'_>) -> Fut + Send,
+            Fut: std::future::Future<Output = Result<(), AmqpTransactionError>> + Send,
         {
             self.connection.inner_client.create_and_run_transaction_scope(op).await
         }

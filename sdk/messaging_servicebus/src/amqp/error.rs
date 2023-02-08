@@ -789,7 +789,7 @@ cfg_transaction! {
     /// Error with committing or rolling back a transaction. This is a wrapper around
     /// `ControllerSendError`.
     #[derive(Debug)]
-    pub struct AmqpTransactionDischargeError(fe2o3_amqp::transaction::ControllerSendError);
+    pub struct AmqpTransactionDischargeError(pub fe2o3_amqp::transaction::ControllerSendError);
 
     impl std::fmt::Display for AmqpTransactionDischargeError {
         fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
@@ -823,5 +823,9 @@ cfg_transaction! {
         /// Error with committing/rolling back a transaction
         #[error("Commit/rollback of transaction failed with error: {0}")]
         Discharge(#[from] AmqpTransactionDischargeError),
+
+        /// Custom error that can be used to wrap other errors
+        #[error(transparent)]
+        Other(Box<dyn std::error::Error + Send>),
     }
 }

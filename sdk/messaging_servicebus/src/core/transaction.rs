@@ -13,13 +13,13 @@ pub trait TransactionClient {
     type Scope<'t>;
     type TransactionError: std::error::Error;
 
-    async fn create_and_run_transaction_scope<F, Fut, O>(
+    async fn create_and_run_transaction_scope<F, Fut>(
         &mut self,
         op: F
-    ) -> Result<O, Self::TransactionError>
+    ) -> Result<(), Self::TransactionError>
     where
-        F: FnOnce(Self::Scope<'_>) -> Fut + Send,
-        Fut: Future<Output = Result<O, Self::TransactionError>> + Send;
+        F: FnOnce(&'_ Self::Scope<'_>) -> Fut + Send,
+        Fut: Future<Output = Result<(), Self::TransactionError>> + Send;
 }
 
 #[async_trait]
