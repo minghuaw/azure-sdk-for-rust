@@ -784,3 +784,42 @@ impl From<IllegalLinkStateError> for AmqpTransactionDispositionError {
         }
     }
 }
+
+/// Error with committing or rolling back a transaction. This is a wrapper around
+/// `ControllerSendError`.
+#[derive(Debug)]
+pub struct AmqpTransactionDischargeError(fe2o3_amqp::transaction::ControllerSendError);
+
+impl std::fmt::Display for AmqpTransactionDischargeError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "Commit/rollback of transaction failed with error: {}", self.0)
+    }
+}
+
+impl std::error::Error for AmqpTransactionDischargeError {}
+
+impl From<fe2o3_amqp::transaction::ControllerSendError> for AmqpTransactionDischargeError {
+    fn from(value: fe2o3_amqp::transaction::ControllerSendError) -> Self {
+        Self(value)
+    }
+}
+
+/// Errors with transaction operations
+#[derive(Debug, thiserror::Error)]
+pub enum AmqpTransactionError {
+    /// Error with declaring a transaction
+    #[error("Declaration of transaction failed with error: {0}")]
+    Declare(fe2o3_amqp::transaction::ControllerSendError),
+
+    /// Error with sending a message within a transaction
+    #[error(transparent)]
+    Send(#[from] AmqpTransactionSendError),
+
+    /// Error with disposition of a message within a transaction
+    #[error(transparent)]
+    Disposition(#[from] AmqpTransactionDispositionError),
+
+    /// Error with committing/rolling back a transaction
+    #[error("Commit/rollback of transaction failed with error: {0}")]
+    Discharge(#[from] AmqpTransactionDischargeError),
+}

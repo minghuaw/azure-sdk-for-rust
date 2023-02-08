@@ -9,18 +9,20 @@
 //! - [x] Defer
 //! - [ ] Renew lock
 
-use fe2o3_amqp::transaction::{TransactionDischarge, ControllerSendError};
+use fe2o3_amqp::transaction::{TransactionDischarge};
 use fe2o3_amqp_types::primitives::OrderedMap;
 use serde_amqp::Value;
 
 use crate::{
     amqp::{
         amqp_transaction::AmqpTransaction,
-        error::{AmqpTransactionDispositionError, AmqpTransactionSendError},
+        error::{AmqpTransactionDispositionError, AmqpTransactionSendError, AmqpTransactionDischargeError},
     },
     core::TransactionProcessing,
     ServiceBusMessage, ServiceBusMessageBatch, ServiceBusReceivedMessage, ServiceBusSender, receiver::{MaybeSessionReceiver, DeadLetterOptions},
 };
+
+pub mod error;
 
 /// A Service Bus transaction scope
 #[derive(Debug)]
@@ -34,13 +36,13 @@ impl<'t> TransactionScope<'t> {
     }
 
     /// Commit the transaction
-    pub async fn commit(self) -> Result<(), ControllerSendError> {
-        self.txn.0.commit().await
+    pub async fn commit(self) -> Result<(), AmqpTransactionDischargeError> {
+        self.txn.commit().await
     }
 
     /// Rollback the transaction
-    pub async fn rollback(self) -> Result<(), ControllerSendError> {
-        self.txn.0.rollback().await
+    pub async fn rollback(self) -> Result<(), AmqpTransactionDischargeError> {
+        self.txn.rollback().await
     }
 
     /// Send a message within the transaction scope

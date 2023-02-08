@@ -16,7 +16,7 @@ use crate::{
 use async_trait::async_trait;
 use fe2o3_amqp::{
     link::{delivery::DeliveryInfo, IllegalLinkStateError},
-    transaction::{Transaction, TransactionalRetirement},
+    transaction::{Transaction, TransactionalRetirement, TransactionDischarge},
 };
 use fe2o3_amqp_types::{
     messaging::{Modified, Outcome},
@@ -32,7 +32,7 @@ use super::{
     },
     amqp_receiver::{dead_letter_error, AmqpReceiver},
     amqp_sender::AmqpSender,
-    error::{AmqpTransactionDispositionError, AmqpTransactionSendError, NotAcceptedError},
+    error::{AmqpTransactionDispositionError, AmqpTransactionSendError, NotAcceptedError, AmqpTransactionDischargeError},
 };
 
 #[derive(Debug)]
@@ -259,5 +259,21 @@ impl<'t> TransactionProcessing for AmqpTransaction<'t> {
                 Ok(())
             }
         }
+    }
+}
+
+#[async_trait]
+impl<'t> TransactionDischarge for AmqpTransaction<'t> {
+    /// Errors with discharging
+    type Error = AmqpTransactionDischargeError;
+
+    /// Whether the transaction is already discharged
+    fn is_discharged(&self) -> bool {
+        self.0.is_discharged()
+    }
+
+    /// Discharge the transaction
+    async fn discharge(&mut self, fail: bool) -> Result<(), Self::Error> {
+        self.0.discharge(fail).await.map_err(Into::into)
     }
 }

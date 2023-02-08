@@ -1,10 +1,26 @@
 //! Transaction traits for Service Bus
 
+use std::future::Future;
+
 use async_trait::async_trait;
 use fe2o3_amqp_types::primitives::OrderedMap;
 use serde_amqp::Value;
 
 use crate::{ServiceBusMessage, ServiceBusReceivedMessage};
+
+#[async_trait]
+pub trait TransactionClient {
+    type Scope<'t>;
+    type TransactionError: std::error::Error;
+
+    async fn create_and_run_transaction_scope<F, Fut, O>(
+        &mut self,
+        op: F
+    ) -> Result<O, Self::TransactionError>
+    where
+        F: FnOnce(Self::Scope<'_>) -> Fut + Send,
+        Fut: Future<Output = Result<O, Self::TransactionError>> + Send;
+}
 
 #[async_trait]
 pub trait TransactionProcessing {

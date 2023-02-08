@@ -86,7 +86,7 @@ pub(crate) struct AmqpConnectionScope {
     ///
     /// TODO: transactions?
     #[cfg(feature = "transaction")]
-    transaction_controller: Controller,
+    pub(crate) transaction_controller: Controller,
 }
 
 impl std::fmt::Debug for AmqpConnectionScope {
