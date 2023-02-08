@@ -7,7 +7,7 @@ use tokio::sync::Mutex;
 use crate::{
     authorization::service_bus_token_credential::ServiceBusTokenCredential,
     constants::DEFAULT_LAST_PEEKED_SEQUENCE_NUMBER,
-    core::{TransportClient, TransportConnectionScope, TransactionClient},
+    core::{TransportClient, TransportConnectionScope},
     primitives::{
         service_bus_retry_options::ServiceBusRetryOptions,
         service_bus_retry_policy::ServiceBusRetryPolicyExt,
@@ -15,7 +15,7 @@ use crate::{
     },
     receiver::service_bus_receive_mode::ServiceBusReceiveMode,
     sealed::Sealed,
-    ServiceBusRetryPolicy, transaction::TransactionScope,
+    ServiceBusRetryPolicy,
 };
 
 use super::{
@@ -24,8 +24,9 @@ use super::{
     amqp_rule_manager::AmqpRuleManager,
     amqp_sender::AmqpSender,
     amqp_session_receiver::AmqpSessionReceiver,
-    error::{AmqpClientError, OpenReceiverError, OpenRuleManagerError, OpenSenderError, AmqpTransactionError}, amqp_transaction::AmqpTransaction,
+    error::{AmqpClientError, OpenReceiverError, OpenRuleManagerError, OpenSenderError},
 };
+
 
 /// A transport client abstraction responsible for brokering operations for AMQP-based connections.
 ///
@@ -311,30 +312,35 @@ fn format_connection_endpoint(
     }
 }
 
-#[async_trait]
-impl<RP> TransactionClient for AmqpClient<RP>
-where
-    RP: Send,
-{
-    type Scope<'t> = TransactionScope<'t>;
-    type TransactionError = AmqpTransactionError;
+cfg_transaction! {
+    use crate::{transaction::TransactionScope, core::TransactionClient};
+    use super::{amqp_transaction::AmqpTransaction, error::AmqpTransactionError};
 
-    async fn create_and_run_transaction_scope<F, Fut, O>(
-        &mut self,
-        op: F
-    ) -> Result<O, Self::TransactionError>
+    #[async_trait]
+    impl<RP> TransactionClient for AmqpClient<RP>
     where
-        F: FnOnce(Self::Scope<'_>) -> Fut + Send,
-        Fut: std::future::Future<Output = Result<O, Self::TransactionError>> + Send,
+        RP: Send,
     {
-        use fe2o3_amqp::transaction::Transaction;
+        type Scope<'t> = TransactionScope<'t>;
+        type TransactionError = AmqpTransactionError;
 
-        let guard = self.connection_scope.lock().await;
-        let txn = Transaction::declare(&guard.transaction_controller, None).await
-            .map_err(|err| AmqpTransactionError::Declare(err))?;
-        let scope = TransactionScope::new(AmqpTransaction(txn));
+        async fn create_and_run_transaction_scope<F, Fut, O>(
+            &mut self,
+            op: F
+        ) -> Result<O, Self::TransactionError>
+        where
+            F: FnOnce(Self::Scope<'_>) -> Fut + Send,
+            Fut: std::future::Future<Output = Result<O, Self::TransactionError>> + Send,
+        {
+            use fe2o3_amqp::transaction::Transaction;
 
-        (op)(scope).await
+            let guard = self.connection_scope.lock().await;
+            let txn = Transaction::declare(&guard.transaction_controller, None).await
+                .map_err(|err| AmqpTransactionError::Declare(err))?;
+            let scope = TransactionScope::new(AmqpTransaction(txn));
+
+            (op)(scope).await
+        }
     }
 }
 

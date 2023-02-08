@@ -3,7 +3,6 @@
 use std::{borrow::Cow, marker::PhantomData};
 
 use azure_core::{auth::TokenCredential, Url};
-use std::future::Future;
 
 use crate::{
     amqp::{
@@ -15,7 +14,7 @@ use crate::{
         shared_access_credential::SharedAccessCredential, AzureNamedKeyCredential,
         AzureSasCredential,
     },
-    core::{BasicRetryPolicy, TransportSessionReceiver, TransactionClient},
+    core::{BasicRetryPolicy, TransportSessionReceiver},
     diagnostics,
     entity_name_formatter::{self, format_entity_path},
     primitives::{
@@ -29,8 +28,12 @@ use crate::{
         ServiceBusSessionReceiver, ServiceBusSessionReceiverOptions,
     },
     ServiceBusReceiver, ServiceBusReceiverOptions, ServiceBusRuleManager, ServiceBusSender,
-    ServiceBusSenderOptions, transaction::{TransactionScope, error::TransactionError},
+    ServiceBusSenderOptions,
 };
+
+cfg_transaction! {
+    use crate::{core::TransactionClient, transaction::{TransactionScope, error::TransactionError}};
+}
 
 use super::error::AcceptNextSessionError;
 
@@ -511,13 +514,15 @@ where
         Ok(ServiceBusSessionReceiver { inner, session_id })
     }
 
-    /// Declares a transaction
-    pub async fn transaction<F, Fut, O>(&mut self, op: F) -> Result<O, TransactionError>
-    where
-        for<'t> F: FnOnce(TransactionScope<'t>) -> Fut + Send,
-        Fut: Future<Output = Result<O, TransactionError>> + Send,
-    {
-        self.connection.inner_client.create_and_run_transaction_scope(op).await
+    cfg_transaction! {
+        /// Declares a transaction and performs the transactional operations within the scope
+        pub async fn transaction<F, Fut, O>(&mut self, op: F) -> Result<O, TransactionError>
+        where
+            for<'t> F: FnOnce(TransactionScope<'t>) -> Fut + Send,
+            Fut: std::future::Future<Output = Result<O, TransactionError>> + Send,
+        {
+            self.connection.inner_client.create_and_run_transaction_scope(op).await
+        }
     }
 }
 

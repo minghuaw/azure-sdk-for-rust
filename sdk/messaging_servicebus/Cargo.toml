@@ -78,7 +78,7 @@ env_logger = "0.10"
 [features]
 default = [
   "native-tls",
-  "transaction",
+  # "transaction",
 ]
 
 # CI tests related features

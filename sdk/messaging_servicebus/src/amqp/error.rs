@@ -7,7 +7,7 @@ use fe2o3_amqp::{
         IllegalLinkStateError, LinkStateError, ReceiverAttachError, ReceiverResumeErrorKind,
         RecvError, SendError, SenderAttachError, SenderResumeErrorKind,
     },
-    session::{self, BeginError}, transaction::PostError,
+    session::{self, BeginError},
 };
 use fe2o3_amqp_management::error::{AttachError, Error as ManagementError};
 use fe2o3_amqp_types::messaging::{Modified, Rejected, Released};
@@ -744,82 +744,84 @@ impl ServiceBusRetryPolicyError for CreateRuleError {
     }
 }
 
-/// Error sending message within a transaction
-#[derive(Debug, thiserror::Error)]
-pub enum AmqpTransactionSendError {
-    /// Error sending message
-    #[error(transparent)]
-    Send(#[from] PostError),
+cfg_transaction! {
+    /// Error sending message within a transaction
+    #[derive(Debug, thiserror::Error)]
+    pub enum AmqpTransactionSendError {
+        /// Error sending message
+        #[error(transparent)]
+        Send(#[from] fe2o3_amqp::transaction::PostError),
 
-    /// The sent message is not accepted by the service
-    #[error(transparent)]
-    NotAccepted(#[from] NotAcceptedError),
+        /// The sent message is not accepted by the service
+        #[error(transparent)]
+        NotAccepted(#[from] NotAcceptedError),
 
-    /// The operation timed out
-    #[error(transparent)]
-    Elapsed(#[from] TimeoutElapsed),
-}
+        /// The operation timed out
+        #[error(transparent)]
+        Elapsed(#[from] TimeoutElapsed),
+    }
 
-/// Error with retiring a message in a transaction
-#[derive(Debug, thiserror::Error)]
-pub enum AmqpTransactionDispositionError {
-    /// ILlegal link state
-    #[error("Illegal local state")]
-    IllegalState,
+    /// Error with retiring a message in a transaction
+    #[derive(Debug, thiserror::Error)]
+    pub enum AmqpTransactionDispositionError {
+        /// ILlegal link state
+        #[error("Illegal local state")]
+        IllegalState,
 
-    /// Session has dropped
-    #[error("Session has dropped")]
-    IllegalSessionState,
+        /// Session has dropped
+        #[error("Session has dropped")]
+        IllegalSessionState,
 
-    /// Transactional request-response not implemented
-    #[error("Transactional request-response not implemented")]
-    TransactionalRequestResponseNotImplemented,
-}
+        /// Transactional request-response not implemented
+        #[error("Transactional request-response not implemented")]
+        TransactionalRequestResponseNotImplemented,
+    }
 
-impl From<IllegalLinkStateError> for AmqpTransactionDispositionError {
-    fn from(value: IllegalLinkStateError) -> Self {
-        match value {
-            IllegalLinkStateError::IllegalState => Self::IllegalState,
-            IllegalLinkStateError::IllegalSessionState => Self::IllegalSessionState,
+    impl From<IllegalLinkStateError> for AmqpTransactionDispositionError {
+        fn from(value: IllegalLinkStateError) -> Self {
+            match value {
+                IllegalLinkStateError::IllegalState => Self::IllegalState,
+                IllegalLinkStateError::IllegalSessionState => Self::IllegalSessionState,
+            }
         }
     }
-}
 
-/// Error with committing or rolling back a transaction. This is a wrapper around
-/// `ControllerSendError`.
-#[derive(Debug)]
-pub struct AmqpTransactionDischargeError(fe2o3_amqp::transaction::ControllerSendError);
+    /// Error with committing or rolling back a transaction. This is a wrapper around
+    /// `ControllerSendError`.
+    #[derive(Debug)]
+    pub struct AmqpTransactionDischargeError(fe2o3_amqp::transaction::ControllerSendError);
 
-impl std::fmt::Display for AmqpTransactionDischargeError {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "Commit/rollback of transaction failed with error: {}", self.0)
+    impl std::fmt::Display for AmqpTransactionDischargeError {
+        fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+            write!(f, "Commit/rollback of transaction failed with error: {}", self.0)
+        }
     }
-}
 
-impl std::error::Error for AmqpTransactionDischargeError {}
+    impl std::error::Error for AmqpTransactionDischargeError {}
 
-impl From<fe2o3_amqp::transaction::ControllerSendError> for AmqpTransactionDischargeError {
-    fn from(value: fe2o3_amqp::transaction::ControllerSendError) -> Self {
-        Self(value)
+    impl From<fe2o3_amqp::transaction::ControllerSendError> for AmqpTransactionDischargeError {
+        fn from(value: fe2o3_amqp::transaction::ControllerSendError) -> Self {
+            Self(value)
+        }
     }
-}
 
-/// Errors with transaction operations
-#[derive(Debug, thiserror::Error)]
-pub enum AmqpTransactionError {
-    /// Error with declaring a transaction
-    #[error("Declaration of transaction failed with error: {0}")]
-    Declare(fe2o3_amqp::transaction::ControllerSendError),
+    /// Errors with transaction operations
+    #[derive(Debug, thiserror::Error)]
+    pub enum AmqpTransactionError {
+        /// Error with declaring a transaction
+        #[error("Declaration of transaction failed with error: {0}")]
+        Declare(fe2o3_amqp::transaction::ControllerSendError),
 
-    /// Error with sending a message within a transaction
-    #[error(transparent)]
-    Send(#[from] AmqpTransactionSendError),
+        /// Error with sending a message within a transaction
+        #[error(transparent)]
+        Send(#[from] AmqpTransactionSendError),
 
-    /// Error with disposition of a message within a transaction
-    #[error(transparent)]
-    Disposition(#[from] AmqpTransactionDispositionError),
+        /// Error with disposition of a message within a transaction
+        #[error(transparent)]
+        Disposition(#[from] AmqpTransactionDispositionError),
 
-    /// Error with committing/rolling back a transaction
-    #[error("Commit/rollback of transaction failed with error: {0}")]
-    Discharge(#[from] AmqpTransactionDischargeError),
+        /// Error with committing/rolling back a transaction
+        #[error("Commit/rollback of transaction failed with error: {0}")]
+        Discharge(#[from] AmqpTransactionDischargeError),
+    }
 }
