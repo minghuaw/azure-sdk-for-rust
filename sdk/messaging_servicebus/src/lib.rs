@@ -186,6 +186,10 @@ cfg_either_rustls_or_native_tls! {
     pub mod rule_manager;
 }
 
+cfg_transaction! {
+    pub mod transaction;
+}
+
 pub mod administration;
 pub mod amqp;
 pub mod authorization;

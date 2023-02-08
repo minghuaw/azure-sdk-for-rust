@@ -32,3 +32,13 @@ macro_rules! cfg_either_rustls_or_native_tls {
         )*
     }
 }
+
+macro_rules! cfg_transaction {
+    ($($item:item)*) => {
+        $(
+            #[cfg_attr(docsrs, doc(cfg(feature = "transaction")))]
+            #[cfg(feature = "transaction")]
+            $item
+        )*
+    }
+}

@@ -27,6 +27,10 @@ pub(crate) mod scheduled_message;
 pub(crate) mod session_filter;
 pub(crate) mod token_type;
 
+cfg_transaction! {
+    pub(crate) mod amqp_transaction;
+}
+
 pub mod error;
 
 use std::sync::atomic::AtomicU32;

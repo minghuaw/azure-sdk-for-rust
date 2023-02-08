@@ -46,7 +46,7 @@ azure_core = { path = "../core", version = "0.8" }
 
 # AMQP dependencies
 fe2o3-amqp-types = "0.7"
-fe2o3-amqp = {version = "0.8.15"} # TODO: let user choose rustls or native-tls?
+fe2o3-amqp = {version = "0.8.18"} # TODO: let user choose rustls or native-tls?
 fe2o3-amqp-cbs = "0.2"
 fe2o3-amqp-management = "0.2.1"
 fe2o3-amqp-ws = { version = "0.3.1" }
@@ -76,7 +76,10 @@ tokio = {version = "1.0", features = ["macros", "rt", "rt-multi-thread"]}
 env_logger = "0.10"
 
 [features]
-default = ["native-tls"]
+default = [
+  "native-tls",
+  "transaction",
+]
 
 # CI tests related features
 test_e2e = [] # This enables tests under the `sdk/messaging_servicebus/tests` directory

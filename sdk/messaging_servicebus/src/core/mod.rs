@@ -17,4 +17,10 @@ pub(crate) use transport_receiver::*;
 pub(crate) use transport_rule_manager::*;
 pub(crate) use transport_sender::*;
 
+cfg_transaction! {
+    mod transaction;
+
+    pub(crate) use transaction::*;
+}
+
 pub use basic_retry_policy::*;

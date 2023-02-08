@@ -7,17 +7,17 @@ use serde_amqp::Value;
 use crate::{
     amqp::{
         amqp_session_receiver::AmqpSessionReceiver,
-        error::{AmqpDispositionError, AmqpRecvError, AmqpRequestResponseError},
+        error::{AmqpDispositionError, AmqpRecvError, AmqpRequestResponseError}, amqp_receiver::AmqpReceiver,
     },
     core::{TransportReceiver, TransportSessionReceiver},
     primitives::{
         error::RetryError, service_bus_peeked_message::ServiceBusPeekedMessage,
         service_bus_received_message::ServiceBusReceivedMessage,
     },
-    ServiceBusReceiveMode, ServiceBusReceiverOptions,
+    ServiceBusReceiveMode, ServiceBusReceiverOptions, sealed::Sealed,
 };
 
-use super::DeadLetterOptions;
+use super::{DeadLetterOptions, MaybeSessionReceiver};
 
 #[cfg(docsrs)]
 use crate::{ServiceBusClient, ServiceBusRetryOptions};
@@ -59,6 +59,14 @@ impl From<ServiceBusSessionReceiverOptions> for ServiceBusReceiverOptions {
 pub struct ServiceBusSessionReceiver {
     pub(crate) inner: AmqpSessionReceiver,
     pub(crate) session_id: String,
+}
+
+impl Sealed for ServiceBusSessionReceiver {}
+
+impl MaybeSessionReceiver for ServiceBusSessionReceiver {
+    fn get_inner_mut_and_session_id(&mut self) -> (&mut AmqpReceiver, Option<&str>) {
+        (&mut self.inner.inner, Some(&self.session_id))
+    }
 }
 
 impl ServiceBusSessionReceiver {

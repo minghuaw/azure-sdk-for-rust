@@ -4,7 +4,7 @@ use fe2o3_amqp::{
     Delivery, Receiver,
 };
 use fe2o3_amqp_types::{
-    definitions::{ErrorCondition, Fields, ReceiverSettleMode},
+    definitions::{self, ErrorCondition, Fields, ReceiverSettleMode},
     messaging::{annotations::AnnotationKey, Body, Modified},
     primitives::{Array, OrderedMap, Symbol, Timestamp, Uuid},
 };
@@ -111,6 +111,48 @@ fn map_properties_to_modify_into_fields(
         .iter()
         .map(|(k, v)| (Symbol::from(k.as_str()), v.clone()))
         .collect()
+}
+
+pub(crate) fn dead_letter_error(
+    dead_letter_reason: Option<String>,
+    dead_letter_error_description: Option<String>,
+    properties_to_modify: Option<OrderedMap<String, Value>>,
+) -> Option<definitions::Error> {
+    let mut error = None;
+    if dead_letter_reason.is_some()
+        || dead_letter_error_description.is_some()
+        || properties_to_modify.is_some()
+    {
+        let condition = ErrorCondition::Custom(Symbol::from(DEAD_LETTER_NAME));
+        let mut info = None;
+
+        if let Some(reason) = dead_letter_reason {
+            info.get_or_insert(Fields::default()).insert(
+                DEAD_LETTER_REASON_HEADER.into(),
+                Value::from(reason),
+            );
+        }
+
+        if let Some(description) = dead_letter_error_description {
+            info.get_or_insert(Fields::default()).insert(
+                DEAD_LETTER_ERROR_DESCRIPTION_HEADER.into(),
+                Value::from(description),
+            );
+        }
+
+        if let Some(properties_to_modify) = properties_to_modify {
+            for (k, v) in properties_to_modify {
+                info.get_or_insert(Fields::default())
+                    .insert(Symbol::from(k), v);
+            }
+        }
+
+        error = Some(fe2o3_amqp::types::definitions::Error::new(
+            condition, None, info,
+        ));
+    }
+
+    error
 }
 
 /// An AMQP receiver implementation for Service Bus
@@ -258,41 +300,13 @@ impl AmqpReceiver {
         dead_letter_error_description: &Option<String>,
         properties_to_modify: &Option<OrderedMap<String, Value>>,
     ) -> Result<(), AmqpDispositionError> {
-        let mut error = None;
-        if dead_letter_reason.is_some()
-            || dead_letter_error_description.is_some()
-            || properties_to_modify.is_some()
-        {
-            let condition = ErrorCondition::Custom(Symbol::from(DEAD_LETTER_NAME));
-            let mut info = None;
-
-            if let Some(reason) = dead_letter_reason {
-                info.get_or_insert(Fields::default()).insert(
-                    DEAD_LETTER_REASON_HEADER.into(),
-                    Value::from(reason.as_str()),
-                );
-            }
-
-            if let Some(description) = dead_letter_error_description {
-                info.get_or_insert(Fields::default()).insert(
-                    DEAD_LETTER_ERROR_DESCRIPTION_HEADER.into(),
-                    Value::from(description.as_str()),
-                );
-            }
-
-            if let Some(properties_to_modify) = properties_to_modify {
-                for (k, v) in properties_to_modify {
-                    info.get_or_insert(Fields::default())
-                        .insert(Symbol::from(k.as_str()), v.clone()); // TODO: reduce cloning
-                }
-            }
-
-            error = Some(fe2o3_amqp::types::definitions::Error::new(
-                condition, None, info,
-            ))
-        }
-
         // TODO: avoid clone
+        let error = dead_letter_error(
+            dead_letter_reason.clone(),
+            dead_letter_error_description.clone(),
+            properties_to_modify.clone(),
+        );
+
         self.receiver.reject(delivery_info.clone(), error).await?;
         Ok(())
     }

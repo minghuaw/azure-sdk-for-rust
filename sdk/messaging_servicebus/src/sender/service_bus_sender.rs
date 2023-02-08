@@ -34,6 +34,12 @@ pub struct ServiceBusSender {
     pub(crate) inner: AmqpSender,
 }
 
+impl AsMut<AmqpSender> for ServiceBusSender {
+    fn as_mut(&mut self) -> &mut AmqpSender {
+        &mut self.inner
+    }
+}
+
 impl ServiceBusSender {
     /// The path of the entity that the sender is connected to, specific to the
     /// Service Bus namespace that contains it.

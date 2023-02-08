@@ -7,7 +7,7 @@ use fe2o3_amqp::{
         IllegalLinkStateError, LinkStateError, ReceiverAttachError, ReceiverResumeErrorKind,
         RecvError, SendError, SenderAttachError, SenderResumeErrorKind,
     },
-    session::{self, BeginError},
+    session::{self, BeginError}, transaction::PostError,
 };
 use fe2o3_amqp_management::error::{AttachError, Error as ManagementError};
 use fe2o3_amqp_types::messaging::{Modified, Rejected, Released};
@@ -741,5 +741,46 @@ impl ServiceBusRetryPolicyError for CreateRuleError {
 
     fn is_scope_disposed(&self) -> bool {
         matches!(self, Self::ConnectionScopeDisposed)
+    }
+}
+
+/// Error sending message within a transaction
+#[derive(Debug, thiserror::Error)]
+pub enum AmqpTransactionSendError {
+    /// Error sending message
+    #[error(transparent)]
+    Send(#[from] PostError),
+
+    /// The sent message is not accepted by the service
+    #[error(transparent)]
+    NotAccepted(#[from] NotAcceptedError),
+
+    /// The operation timed out
+    #[error(transparent)]
+    Elapsed(#[from] TimeoutElapsed),
+}
+
+/// Error with retiring a message in a transaction
+#[derive(Debug, thiserror::Error)]
+pub enum AmqpTransactionDispositionError {
+    /// ILlegal link state
+    #[error("Illegal local state")]
+    IllegalState,
+
+    /// Session has dropped
+    #[error("Session has dropped")]
+    IllegalSessionState,
+
+    /// Transactional request-response not implemented
+    #[error("Transactional request-response not implemented")]
+    TransactionalRequestResponseNotImplemented,
+}
+
+impl From<IllegalLinkStateError> for AmqpTransactionDispositionError {
+    fn from(value: IllegalLinkStateError) -> Self {
+        match value {
+            IllegalLinkStateError::IllegalState => Self::IllegalState,
+            IllegalLinkStateError::IllegalSessionState => Self::IllegalSessionState,
+        }
     }
 }

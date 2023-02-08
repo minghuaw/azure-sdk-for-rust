@@ -1,6 +1,8 @@
 //! Receiver for Service Bus queues and subscriptions.
 use serde_amqp::{primitives::OrderedMap, Value};
 
+use crate::{amqp::amqp_receiver::AmqpReceiver, sealed::Sealed};
+
 cfg_either_rustls_or_native_tls! {
     pub mod service_bus_receiver;
     pub mod service_bus_session_receiver;
@@ -21,4 +23,11 @@ pub struct DeadLetterOptions {
 
     /// The properties to modify on the message
     pub properties_to_modify: Option<OrderedMap<String, Value>>,
+}
+
+/// A trait for transaction settling of messages.
+pub trait MaybeSessionReceiver: Sealed {
+
+    /// Get a mutable reference to the inner AMQP receiver and the session id.
+    fn get_inner_mut_and_session_id(&mut self) -> (&mut AmqpReceiver, Option<&str>);
 }

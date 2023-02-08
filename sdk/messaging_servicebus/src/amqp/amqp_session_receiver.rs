@@ -54,6 +54,12 @@ pub struct AmqpSessionReceiver {
     pub(crate) inner: AmqpReceiver,
 }
 
+impl AsMut<AmqpReceiver> for AmqpSessionReceiver {
+    fn as_mut(&mut self) -> &mut AmqpReceiver {
+        &mut self.inner
+    }
+}
+
 #[cfg_attr(not(target_arch = "wasm32"), async_trait)]
 #[cfg_attr(target_arch = "wasm32", async_trait(?Send))]
 impl RecoverableTransport for AmqpSessionReceiver {

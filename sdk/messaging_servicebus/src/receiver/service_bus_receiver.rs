@@ -8,13 +8,14 @@ use crate::amqp::amqp_receiver::AmqpReceiver;
 use crate::amqp::error::{AmqpDispositionError, AmqpRecvError, AmqpRequestResponseError};
 use crate::primitives::error::RetryError;
 use crate::primitives::service_bus_peeked_message::ServiceBusPeekedMessage;
+use crate::sealed::Sealed;
 use crate::{
     core::TransportReceiver, primitives::service_bus_received_message::ServiceBusReceivedMessage,
 };
 
 use crate::{primitives::sub_queue::SubQueue, ServiceBusReceiveMode};
 
-use super::DeadLetterOptions;
+use super::{DeadLetterOptions, MaybeSessionReceiver};
 
 #[cfg(docsrs)]
 use crate::{ServiceBusClient, ServiceBusRetryOptions};
@@ -49,6 +50,14 @@ pub struct ServiceBusReceiverOptions {
 #[derive(Debug)]
 pub struct ServiceBusReceiver {
     pub(crate) inner: AmqpReceiver,
+}
+
+impl Sealed for ServiceBusReceiver {}
+
+impl MaybeSessionReceiver for ServiceBusReceiver {
+    fn get_inner_mut_and_session_id(&mut self) -> (&mut AmqpReceiver, Option<&str>) {
+        (&mut self.inner, None)
+    }
 }
 
 impl ServiceBusReceiver {
