@@ -105,6 +105,7 @@ impl From<AmqpClientError> for Error {
             AmqpClientError::Dispose(err) => Self::Dispose(err),
             AmqpClientError::ReceiverAttach(err) => Self::ReceiverAttach(err),
             AmqpClientError::ClientDisposed => Self::ClientDisposed,
+            AmqpClientError::CannotSetUrlScheme => Self::ArgumentError("Cannot set url scheme".to_string()),
         }
     }
 }

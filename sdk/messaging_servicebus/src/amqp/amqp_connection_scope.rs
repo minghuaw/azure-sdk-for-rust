@@ -6,7 +6,7 @@ use std::{
 use async_trait::async_trait;
 use azure_core::Url;
 use fe2o3_amqp::{
-    connection::ConnectionHandle, link::receiver::CreditMode, sasl_profile::SaslProfile,
+    connection::{ConnectionHandle, OpenError}, link::receiver::CreditMode, sasl_profile::SaslProfile,
     session::SessionHandle, Connection, Session,
 };
 
@@ -214,7 +214,9 @@ impl AmqpConnectionScope {
                 .await
                 .map_err(Into::into),
             ServiceBusTransportType::AmqpWebSocket => {
-                let ws_stream = WebSocketStream::connect(connection_endpoint).await?;
+                let addr = connection_endpoint.join(Self::WEB_SOCKETS_PATH_SUFFIX)
+                    .map_err(|err| OpenError::UrlError(err))?;
+                let ws_stream = WebSocketStream::connect(addr).await?;
 
                 #[cfg(not(target_arch = "wasm32"))]
                 let result = connection_builder

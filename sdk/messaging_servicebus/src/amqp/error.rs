@@ -51,6 +51,10 @@ pub(crate) enum AmqpConnectionScopeError {
 /// Error with AMQP client
 #[derive(Debug, thiserror::Error)]
 pub enum AmqpClientError {
+    /// Cannot set Url scheme
+    #[error("Cannot set Url scheme")]
+    CannotSetUrlScheme,
+
     /// Error parsing the URL
     #[error(transparent)]
     UrlParseError(#[from] url::ParseError),
