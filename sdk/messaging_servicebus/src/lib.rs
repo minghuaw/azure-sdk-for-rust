@@ -42,7 +42,7 @@
 //!     // Replace "<NAMESPACE-CONNECTION-STRING>" with your connection string,
 //!     // which can be found in the Azure portal and should look like
 //!     // "Endpoint=sb://<NAMESPACE>.servicebus.windows.net/;SharedAccessKeyName=<KEY_NAME>;SharedAccessKey=<KEY_VALUE>"
-//!     let mut client = ServiceBusClient::new(
+//!     let mut client = ServiceBusClient::new_from_connection_string(
 //!         "<NAMESPACE-CONNECTION-STRING>",
 //!         ServiceBusClientOptions::default()
 //!     )
@@ -92,7 +92,7 @@
 //!     // Replace "<NAMESPACE-CONNECTION-STRING>" with your connection string,
 //!     // which can be found in the Azure portal and should look like
 //!     // "Endpoint=sb://<NAMESPACE>.servicebus.windows.net/;SharedAccessKeyName=<KEY_NAME>;SharedAccessKey=<KEY_VALUE>"
-//!     let mut client = ServiceBusClient::new(
+//!     let mut client = ServiceBusClient::new_from_connection_string(
 //!         "<NAMESPACE-CONNECTION-STRING>",
 //!         ServiceBusClientOptions::default()
 //!     )
@@ -250,4 +250,3 @@ pub mod prelude {
 
 // Re-export again to allow user to selectively import components
 pub use prelude::*;
-

@@ -1,8 +1,22 @@
 use azure_core::auth::{TokenCredential, TokenResponse};
 
+use crate::constants::DEFAULT_RESOURCE;
+
 use super::shared_access_credential::SharedAccessCredential;
 
 /// Token-based credential for Service Bus.
+///
+/// This supports `SharedAccessCredential` and other credential types that
+/// implement `TokenCredential` (eg. `azure_identity::DefaultAzureCredential`).
+///
+/// # Example
+///
+/// ```rust,no_run
+/// use azure_identity::DefaultAzureCredential;
+/// use azure_messaging_servicebus::authorization::ServiceBusTokenCredential;
+///
+/// let credential = ServiceBusTokenCredential::from(DefaultAzureCredential::default());
+/// ```
 pub enum ServiceBusTokenCredential {
     /// Shared Access Signature credential.
     ///
@@ -40,6 +54,8 @@ where
 }
 
 impl ServiceBusTokenCredential {
+    /// Creates a new `ServiceBusTokenCredential` from the given credential. This is an alias for
+    /// `From::from`.
     pub fn new(source: impl Into<Self>) -> Self {
         source.into()
     }
@@ -60,6 +76,10 @@ impl ServiceBusTokenCredential {
             }
             ServiceBusTokenCredential::Other(credential) => credential.get_token(resource).await,
         }
+    }
+
+    pub(crate) async fn get_token_using_default_resource(&self) -> azure_core::Result<TokenResponse> {
+        self.get_token(DEFAULT_RESOURCE).await
     }
 }
 
