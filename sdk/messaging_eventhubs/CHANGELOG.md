@@ -1,5 +1,17 @@
 # Change log
 
+## 0.15.0
+
+- Updated `azure_core` to `0.15.0`
+
+### Breaking changes
+
+- The generic parameter of `EventStream` now only carries the retry policy. Private types like
+  `AmqpConsumer` and `MultipleAmqpConsumer` are hidden in an internal `enum`.
+- Removed the deprecated fields `cache_event_count` and `max_wait_time` from `ReadEventOptions`
+- The `MaxRetries` type (used in `EventHubsRetryOptions`) can only be constructed via
+  `TryFrom::try_from()` or `new()` which is just an alias for `try_from()`
+
 ## 0.14.4
 
 - Removed the internal buffer from `EventStream`
