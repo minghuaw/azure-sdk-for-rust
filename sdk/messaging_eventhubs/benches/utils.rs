@@ -5,7 +5,7 @@ use std::path::PathBuf;
 use azeventhubs::{
     consumer::{
         self, EventHubConsumerClient, EventHubConsumerClientOptions, EventPosition, EventStream,
-        ReadEventOptions, SingleConsumerEventStream,
+        ReadEventOptions,
     },
     producer::{EventHubProducerClient, SendEventOptions},
     BasicRetryPolicy, EventHubConnection, ReceivedEventData,
@@ -170,7 +170,7 @@ pub async fn create_streams<'a>(
     consumer_clients: &'a mut Vec<Consumer>,
     partitions: &Vec<String>,
     read_event_options: ReadEventOptions,
-) -> Result<Vec<SingleConsumerEventStream<'a, BasicRetryPolicy>>, azure_core::Error> {
+) -> Result<Vec<EventStream<'a, BasicRetryPolicy>>, azure_core::Error> {
     let mut streams = Vec::new();
     for (consumer, partition_id) in consumer_clients.iter_mut().zip(partitions) {
         let starting_position = EventPosition::earliest();
