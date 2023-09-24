@@ -1,5 +1,10 @@
 # Change log
 
+## 0.15.1
+
+- Updated `fe2o3-amqp-ws` to "0.4.0" which comes with an upstream fix of
+  [CVE-2023-43669](https://github.com/snapview/tungstenite-rs/pull/379).
+
 ## 0.15.0
 
 - Updated `azure_core` to `0.15.0`
