@@ -1,5 +1,7 @@
 # azservicebus
 
+***NOTICE*** This crate has migrated to a separate github repo https://github.com/minghuaw/azservicebus
+
 An unofficial and experimental AMQP 1.0 client for Azure Service Bus.
 
 This crate follows a similar structure to the dotnet sdk
