@@ -1,5 +1,7 @@
 # azeventhubs
 
+***NOTICE*** This crate has migrated to a separate github repo https://github.com/minghuaw/azeventhubs
+
 An unofficial and experimental Azure Event Hubs client library for Rust.
 
 This crate follows a similar structure to that of the [Azure SDK for
