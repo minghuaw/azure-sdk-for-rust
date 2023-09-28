@@ -1,5 +1,7 @@
 # azure_messaging_servicebus
 
+***NOTICE*** This crate has migrated to a separate github repo https://github.com/minghuaw/azservicebus
+
 Azure Service Bus crate for the unofficial Microsoft Azure SDK for Rust.
 This crate is part of a collection of crates: for more information please refer to [https://github.com/azure/azure-sdk-for-rust](https://github.com/azure/azure-sdk-for-rust).
 
